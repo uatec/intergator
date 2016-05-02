@@ -1,9 +1,14 @@
 var parseString = require('xml2js').parseString;
 var jsonPath = require('json-path');
 var request = require('superagent');
+var Firebase = require('firebase');
 
 var url = process.env.URL;
 var productJsonPath = process.env.jsonPath;
+var systemId = process.env.systemId;
+var firebaseUrl = process.env.firebaseUrl;
+
+var fb = new Firebase(firebaseUrl);
 
 console.log(url);
 console.log('starting');
@@ -18,7 +23,8 @@ request.get(url)
             }
             var products = jsonPath.resolve(result, productJsonPath);
             products.forEach(function (p) {
-                console.log(p.title[0]);
+                p._sourceSystemId = systemId;
+                fb.push(p);
             });
         });
     });
