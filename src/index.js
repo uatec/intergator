@@ -1,3 +1,4 @@
+#! /app/bin/node
 var env = require('node-env-file');
 env('./.env', {raise: false});
 
