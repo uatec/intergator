@@ -1,3 +1,6 @@
+var env = require('node-env-file');
+env('./.env');
+
 var parseString = require('xml2js').parseString;
 var jsonPath = require('json-path');
 var request = require('superagent');
@@ -20,7 +23,7 @@ switch (process.env.output_system) {
         destination = require('./firebaseDestination.js');
         break;
     default:
-        throw new Error('no output system specified in \'output_system\' environment variable. Valid options are \'mongo\' or \'firebase\'');
+        throw new Error('no output system specified in \'output_system\' environment variable. Valid options are \'mongo\' or \'firebase\'. Actual was: ' + process.env.output_system);
 }
 
 
