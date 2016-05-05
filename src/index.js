@@ -1,5 +1,5 @@
 var env = require('node-env-file');
-env('./.env');
+env('./.env', {raise: false});
 
 var parseString = require('xml2js').parseString;
 var jsonPath = require('json-path');
