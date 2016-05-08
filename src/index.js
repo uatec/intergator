@@ -28,19 +28,36 @@ switch (process.env.output_system) {
 }
 
 
+var transforms = [
+    function setSourceSystemId (entity) {
+        entity._sourceSystemId = systemId;
+        return entity;
+    }
+];
+
+
 request.get(url)
     .end(function (err, res) {
         if ( err ) {
             throw new Error(err);
         }
+        console.log('[OK] Data Retrieved.');
         parseString(res.text, function (err, result) {
             if ( err ) {
                 throw new Error(err);
             }
+            console.log('[OK] Xml parsed.');
             var products = jsonPath.resolve(result, productJsonPath);
             products.forEach(function (p) {
-                p._sourceSystemId = systemId;
-                destination.push(p);
+                console.log('[..] Parsing SKU: ', p.sku[0]);
+                var baseItem = {
+                    _source: p
+                };
+                transforms.forEach(function(t) { 
+                   baseItem = t(baseItem); 
+                });
+                destination.push(baseItem);
             });
+            console.log('[OK] Data imported.');
         });
     });
