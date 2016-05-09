@@ -55,20 +55,32 @@ destination.init()
         return parseString(data);
     })
     .then(function (result) {
-        console.log('[OK] Xml parsed.');    
+        console.log('[OK] Xml parsed.');
         var products = jsonPath.resolve(result, productJsonPath);
-        products.forEach(function (p) {
-            console.log('[..] Parsing SKU: ', p.sku[0]);
-            var baseItem = {
-                _source: p
-            };
-            transforms.forEach(function (t) {
-                console.log('Applying transform: ' + t.name);
-                baseItem = t(baseItem);
-            });
-            console.log('Transforms complete');
-            destination.push(baseItem);
-        });
-        console.log('[OK] Data imported.');
+        return Promise.all(products.map(function (p) {
+            return new Promise(function (resolve, reject) {
+                console.log('[..] Transforming: ', p.sku[0]);
+                var baseItem = {
+                    _source: p
+                };
+                transforms.forEach(function (t) {
+                    console.log('[..] Apply: ' + t.name);
+                    baseItem = t(baseItem);
+                });
+                console.log('[OK] Transform complete.');
+                resolve(baseItem);
+            })
+                .then(function (output) {
+                    console.log('[..] Pushing.');
+                    return destination.push(output);
+                })
+                .then(function () {
+                    console.log('[OK] Push complete.');
+                });
+        }));
+    })
+    .then(function () {
+        console.log('[OK] Load complete');
+        process.exit();
     });
 
