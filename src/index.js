@@ -4,15 +4,33 @@ env('./.env', {raise: false});
 
 var parseString = require('xml2js').parseString;
 var jsonPath = require('json-path');
-var request = require('superagent');
 
 var url = process.env.URL;
 var productJsonPath = process.env.jsonPath;
 var systemId = process.env.systemId;
 
-console.log(url);
-console.log('starting');
+var source = null;
 
+switch ( process.env.input ) {
+    case 'http':
+        source = require('./httpSource.js');
+        break;   
+    case 'file':
+        source = require('./fileSource.js');
+        break;
+    default:
+        throw new Error('no input system specified in \'input\' environment variable. Valid options are \'http\' or \'file\'. Actual was: ' + process.env.input);
+}
+
+var transforms = [
+    function setSourceSystemId (entity) {
+        entity._sourceSystemId = systemId;
+        return entity;
+    }
+];
+require('promise/lib/rejection-tracking').enable(
+  {allRejections: true}
+);
 var mongoDestination = require('./mongoDestination.js');
 var firebaseDestination = require('./firebaseDestination.js');
 var destination = null;
@@ -27,22 +45,13 @@ switch (process.env.output_system) {
         throw new Error('no output system specified in \'output_system\' environment variable. Valid options are \'mongo\' or \'firebase\'. Actual was: ' + process.env.output_system);
 }
 
-
-var transforms = [
-    function setSourceSystemId (entity) {
-        entity._sourceSystemId = systemId;
-        return entity;
-    }
-];
-
-
-request.get(url)
-    .end(function (err, res) {
-        if ( err ) {
-            throw new Error(err);
-        }
+destination.init()
+    .then(function() {
+        return source.pull('/Users/uatec/tesco.xml');
+    })
+    .then(function(data) {
         console.log('[OK] Data Retrieved.');
-        parseString(res.text, function (err, result) {
+        parseString(data, function (err, result) {
             if ( err ) {
                 throw new Error(err);
             }
@@ -54,10 +63,13 @@ request.get(url)
                     _source: p
                 };
                 transforms.forEach(function(t) { 
+                    console.log('Applying transform: ' + t.name);
                    baseItem = t(baseItem); 
                 });
+                console.log('Transforms complete');
                 destination.push(baseItem);
             });
             console.log('[OK] Data imported.');
         });
     });
+
