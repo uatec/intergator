@@ -36,6 +36,16 @@ var transforms = [
             entity._source[key] = entity._source[key][0];
         });
         return entity;
+    },
+    function importCoreValues(entity) {
+        entity.title = entity._source.title;
+        entity.deeplink = entity._source.url;
+        entity.image = entity.imageUrl;
+        entity.price = {
+            currency: entity._source.currency,
+            value: entity._source.price
+        };
+        entity.description = entity._source.description;
     }
 ];
 require('promise/lib/rejection-tracking').enable(
