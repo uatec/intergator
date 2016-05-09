@@ -1,20 +1,20 @@
 #! /app/bin/node
 var env = require('node-env-file');
-env('./.env', {raise: false});
+env('./.env', { raise: false });
 
-var parseString = require('xml2js').parseString;
 var jsonPath = require('json-path');
-
+var Promise = require('promise');
+var parseString = Promise.denodeify(require('xml2js').parseString);
 var url = process.env.URL;
 var productJsonPath = process.env.jsonPath;
 var systemId = process.env.systemId;
 
 var source = null;
 
-switch ( process.env.input ) {
+switch (process.env.input) {
     case 'http':
         source = require('./httpSource.js');
-        break;   
+        break;
     case 'file':
         source = require('./fileSource.js');
         break;
@@ -23,22 +23,22 @@ switch ( process.env.input ) {
 }
 
 var transforms = [
-    function setSourceSystemId (entity) {
+    function setSourceSystemId(entity) {
         entity._sourceSystemId = systemId;
         return entity;
     }
 ];
 require('promise/lib/rejection-tracking').enable(
-  {allRejections: true}
+    { allRejections: true }
 );
 var mongoDestination = require('./mongoDestination.js');
 var firebaseDestination = require('./firebaseDestination.js');
 var destination = null;
 switch (process.env.output_system) {
-    case 'mongo': 
+    case 'mongo':
         destination = require('./mongoDestination.js');
         break;
-    case 'firebase': 
+    case 'firebase':
         destination = require('./firebaseDestination.js');
         break;
     default:
@@ -46,30 +46,29 @@ switch (process.env.output_system) {
 }
 
 destination.init()
-    .then(function() {
+    .then(function () {
+        console.log('[..] Pulling data.');
         return source.pull('/Users/uatec/tesco.xml');
     })
-    .then(function(data) {
+    .then(function (data) {
         console.log('[OK] Data Retrieved.');
-        parseString(data, function (err, result) {
-            if ( err ) {
-                throw new Error(err);
-            }
-            console.log('[OK] Xml parsed.');
-            var products = jsonPath.resolve(result, productJsonPath);
-            products.forEach(function (p) {
-                console.log('[..] Parsing SKU: ', p.sku[0]);
-                var baseItem = {
-                    _source: p
-                };
-                transforms.forEach(function(t) { 
-                    console.log('Applying transform: ' + t.name);
-                   baseItem = t(baseItem); 
-                });
-                console.log('Transforms complete');
-                destination.push(baseItem);
+        return parseString(data);
+    })
+    .then(function (result) {
+        console.log('[OK] Xml parsed.');    
+        var products = jsonPath.resolve(result, productJsonPath);
+        products.forEach(function (p) {
+            console.log('[..] Parsing SKU: ', p.sku[0]);
+            var baseItem = {
+                _source: p
+            };
+            transforms.forEach(function (t) {
+                console.log('Applying transform: ' + t.name);
+                baseItem = t(baseItem);
             });
-            console.log('[OK] Data imported.');
+            console.log('Transforms complete');
+            destination.push(baseItem);
         });
+        console.log('[OK] Data imported.');
     });
 
