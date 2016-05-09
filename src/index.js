@@ -26,6 +26,10 @@ var transforms = [
     function setSourceSystemId(entity) {
         entity._sourceSystemId = systemId;
         return entity;
+    },
+    function setId(entity) {
+        entity._id = entity._sourceSystemId + ':' + entity._source.sku[0];
+        return entity;
     }
 ];
 require('promise/lib/rejection-tracking').enable(
@@ -71,11 +75,7 @@ destination.init()
                 resolve(baseItem);
             })
                 .then(function (output) {
-                    console.log('[..] Pushing.');
                     return destination.push(output);
-                })
-                .then(function () {
-                    console.log('[OK] Push complete.');
                 });
         }));
     })
