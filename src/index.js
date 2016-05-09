@@ -30,6 +30,12 @@ var transforms = [
     function setId(entity) {
         entity._id = entity._sourceSystemId + ':' + entity._source.sku[0];
         return entity;
+    },
+    function simplifyXmlOutput(entity) {
+        Object.keys(entity._source).forEach(function(key) {
+            entity._source[key] = entity._source[key][0];
+        });
+        return entity;
     }
 ];
 require('promise/lib/rejection-tracking').enable(
