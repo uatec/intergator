@@ -12,6 +12,9 @@ module.exports = {
     },
     
     push: function(document) {
-        fb.push(document);
+        return new Promise(function(resolve, reject) {
+            fb.push(document);
+            resolve();
+        });
     }
 };
