@@ -40,12 +40,19 @@ var transforms = [
     function importCoreValues(entity) {
         entity.title = entity._source.title;
         entity.deeplink = entity._source.url;
-        entity.image = entity.imageUrl;
+        entity.image = entity._source.imageUrl;
         entity.price = {
             currency: entity._source.currency,
             value: entity._source.price
         };
         entity.description = entity._source.description;
+        return entity;
+    },
+    function extractTags(entity) {
+        entity.tags = entity._source.categoryList.split(/>|\;/g).map(function(t) {
+            return t.trim();
+        });
+        return entity;
     }
 ];
 require('promise/lib/rejection-tracking').enable(

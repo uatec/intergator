@@ -23,7 +23,7 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             var collection = _db.collection(process.env.mongoCollection);
 
-            collection.insertMany([document], function (err) {
+            collection.updateOne({_id: document._id}, document, { upsert: true }, function (err) {
 
                 if (err) {
                     reject(err);
