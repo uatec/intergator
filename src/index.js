@@ -49,9 +49,17 @@ var transforms = [
         return entity;
     },
     function extractTags(entity) {
-        entity.tags = entity._source.categoryList.split(/>|\;/g).map(function(t) {
+        var tags = entity._source.categoryList.split(/>|\;/g).map(function(t) {
             return t.trim();
         });
+        
+        entity.tags = {};
+        
+        for ( var i in tags ) {
+            var tag = tags[i];
+            entity.tags[tag] = true;
+        }
+        
         return entity;
     }
 ];
